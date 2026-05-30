@@ -56,25 +56,43 @@ public class Polynomial {
     }
     
     public Polynomial add(Polynomial p) {
-    	double pLen = (double)p.getCoefficients().length;
-    	double cLen = (double)coefficients.length;
-    	double[] newCoeffs = new double[(int)Math.max(cLen, pLen)];
-    	double[] biggerArr, smallerArr;
-    	if (cLen > pLen) {
-    		biggerArr = coefficients;
-    		smallerArr = p.getCoefficients();
-    	} else {
-    		biggerArr = p.getCoefficients();
-    		smallerArr = coefficients;
-    		
-    	}
-    	for (int i = 0; i < newCoeffs.length; i++) {
-    		if (i >= smallerArr.length) newCoeffs[i] = biggerArr[i];
-    		else newCoeffs[i] = smallerArr[i] + biggerArr[i];
-    	}
-    	
-    	Polynomial newP = new Polynomial(newCoeffs, exponents);
-    	return newP;
+        int maxL = p.getCoefficients().length + coefficients.length;
+        int tempExp[] = new int[maxL];
+        for (int i = 0; i < maxL; i++) tempExp[i] = -1;
+        // find exponents
+        int idx = 0;
+        for (int i = 0; i < exponents.length; i++) {
+            int tmp = linearSearch(tempExp, exponents[i]);
+            if (tmp < 0) {
+                tempExp[idx] = exponents[i];
+                idx++;
+            }
+        }
+        for (int i = 0; i < p.getExponents().length; i++) {
+            int tmp = linearSearch(tempExp, p.getExponents()[i]);
+            if (tmp < 0) {
+                tempExp[idx] = p.getExponents()[i];
+                idx++;
+            }
+        }
+        
+        Arrays.sort(tempExp, 0, idx);
+        int newExp[] = new int[idx];
+
+        for (int i = 0; i < idx; i++) newExp[i] = tempExp[i];
+        
+        // find coefficients
+        double newCoeffs[] = new double[idx];
+        for (int i = 0; i < coefficients.length; i++) {
+            int tmp = linearSearch(newExp, exponents[i]);
+            newCoeffs[tmp] += coefficients[i];
+        }
+        for (int i = 0; i < p.getCoefficients().length; i++) {
+            int tmp = linearSearch(newExp, p.getExponents()[i]);
+            newCoeffs[tmp] += p.getCoefficients()[i];
+        }
+        Polynomial newP = new Polynomial(newCoeffs, newExp);
+        return newP;
     }
     
     public double evaluate(double x) {

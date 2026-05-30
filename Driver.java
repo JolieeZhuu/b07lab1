@@ -24,11 +24,14 @@ public class Driver {
         Polynomial p1 = new Polynomial(c1, e1);
         File file = new File("polyFile.txt");
         Polynomial p2 = new Polynomial(file);
-        System.out.println(p1.toString());
-        System.out.println(p2.toString());
+        System.out.println("p1: " + p1.toString());
+        System.out.println("p2: " + p2.toString());
 
         Polynomial q = p1.multiply(p2);
-        System.out.println(q.toString());
+        System.out.println("p1 * p2: " + q.toString());
+
+        Polynomial r = p1.add(p2);
+        System.out.println("p1 + p2: " + r.toString());
 
         q.saveToFile("newPolyFile.txt");
 	}
