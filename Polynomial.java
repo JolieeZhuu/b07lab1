@@ -1,6 +1,5 @@
 import java.io.*;
-import java.util.Arrays;
-import java.util.Scanner;
+import java.util.*;
 
 public class Polynomial {
 	
@@ -17,7 +16,7 @@ public class Polynomial {
         this.exponents = exponents;
     }
 
-    public Polynomial(File file) {
+    public Polynomial(File file) throws FileNotFoundException {
         Scanner sc = new Scanner(file);
         String line = sc.nextLine();
         
@@ -31,11 +30,13 @@ public class Polynomial {
             int idx = tmp.indexOf("x");
             if (idx == -1) {
                 exponents[i] = 0;
+                coefficients[i] = Double.parseDouble(tmp.substring(0, tmp.length()));
             } else {
-                exponents[i] = Integer.parseInt(tmp.substring(idx + 1, tmp.length));
+                exponents[i] = Integer.parseInt(tmp.substring(idx + 1, tmp.length()));
+                coefficients[i] = Double.parseDouble(tmp.substring(0, idx));
             }
-            coefficients[i] = Double.parseDouble(tmp.substring(0, idx));
         }
+        sc.close();
     }
     
     public double[] getCoefficients() {
@@ -68,22 +69,17 @@ public class Polynomial {
     		
     	}
     	for (int i = 0; i < newCoeffs.length; i++) {
-    		if (i >= smallerArr.length) {
-    			newCoeffs[i] = biggerArr[i];
-    		} else {
-        		newCoeffs[i] = smallerArr[i] + biggerArr[i];
-    		}
+    		if (i >= smallerArr.length) newCoeffs[i] = biggerArr[i];
+    		else newCoeffs[i] = smallerArr[i] + biggerArr[i];
     	}
     	
-    	Polynomial newP = new Polynomial(newCoeffs);
+    	Polynomial newP = new Polynomial(newCoeffs, exponents);
     	return newP;
     }
     
     public double evaluate(double x) {
     	double val = 0;
-    	for (int i = 0; i < coefficients.length; i++) {
-    		val += coefficients[i] * Math.pow(x, i);
-    	}
+    	for (int i = 0; i < coefficients.length; i++) val += coefficients[i] * Math.pow(x, i);
     	return val;
     }
     
@@ -92,34 +88,43 @@ public class Polynomial {
     	return res == 0;
     }
 
+    private int linearSearch(int[] arr, int key) {
+        for (int k = 0; k < arr.length; k++) if (arr[k] == key) return k;
+        return -1;
+    }
+
     public Polynomial multiply(Polynomial p) {
         int maxL = p.getCoefficients().length * coefficients.length;
         int tempExp[] = new int[maxL];
 
         // find exponents
         int idx = 0;
-        for (int i = 0; i < coefficients.length; i++) {
-            for (int j = 0; j < p.getCoefficients().length; j++) {
-                int tmp = Array.binarySearch(tempExp, exponents[i] * p.getExponents()[j]);
-                if (tmp != -1) {
-                    tempExp[idx] = exponents[i] * p.getExponents()[j];
-                    tmp++;
+        for (int i = 0; i < exponents.length; i++) {
+            for (int j = 0; j < p.getExponents().length; j++) {
+                int tmp = linearSearch(tempExp, exponents[i] + p.getExponents()[j]);
+
+                if (tmp >= 0 && exponents[i] + p.getExponents()[j] == 0) {
+                    idx++;
+                }
+                else if (tmp < 0) {
+                    tempExp[idx] = exponents[i] + p.getExponents()[j];
+                    idx++;
                 }
             }
         }
-        Arrays.sort(tempExp);
+
+        Arrays.sort(tempExp, 0, idx);
         int newExp[] = new int[idx];
         // copy exponents to correct array length
-        for (int i = 0; i < idx; i++) {
-            newExp[i] = tempExp[i];
-        }
+        for (int i = 0; i < idx; i++) newExp[i] = tempExp[i];
 
         // find coefficients
-        int newCoeffs[] = new int[idx];
+        double newCoeffs[] = new double[idx];
         for (int i = 0; i < coefficients.length; i++) {
             for (int j = 0; j < p.getCoefficients().length; j++) {
-                int coeff = coefficients[i] * p.getCoefficients()[j];
-                int tmp = Array.binarySearch(tempExp, exponents[i] * p.getExponents()[j]);
+                double coeff = coefficients[i] * p.getCoefficients()[j];
+                int tmp = linearSearch(tempExp, exponents[i] + p.getExponents()[j]);
+                // System.out.println("tmp: " + tmp);
                 newCoeffs[tmp] += coeff;
             }
         }
@@ -127,19 +132,31 @@ public class Polynomial {
         return newP;
     }
 
-    public void saveToFile(String fileName) {
+    public void saveToFile(String fileName) throws IOException {
+        String s = toString();
+        PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(fileName)));
+        out.write(s);
+        out.close();
+    }
+
+    public String toString() {
         String s = "";
         int len = coefficients.length;
         for (int i = 0; i < len; i++) {
             if (exponents[i] == 0) {
-                s += "" + coefficients[i] + "";
+                if ((int)coefficients[i] == coefficients[i]) s += "" + (int)coefficients[i] + "";
+                else s += "" + (int)coefficients[i] + "";
             } else {
-                if (coefficients[i] > 0) s += "+" + coefficients[i] + "x" + exponents[i];
-                else s += "" + coefficients[i] + "x" + exponents[i];
+                if (coefficients[i] > 0) {
+                    if ((int)coefficients[i] == coefficients[i]) s += "+" + (int)coefficients[i] + "x" + exponents[i];
+                    else s += "+" + coefficients[i] + "x" + exponents[i];
+                }
+                else {
+                    if ((int)coefficients[i] == coefficients[i]) s += "" + (int)coefficients[i] + "x" + exponents[i];
+                    else s += "" + coefficients[i] + "x" + exponents[i];
+                }
             }
         }
-        PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(fileName)));
-        out.write(s);
-        out.close();
+        return s;
     }
 }
